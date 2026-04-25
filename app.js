@@ -1,4 +1,4 @@
-require('dotenv').config({ path: __dirname + '/.env' });
+require('dotenv').config();
 console.log("ENV cargado:", process.env.DATABASE_URL);
 const express = require('express');
 const cors = require('cors');
