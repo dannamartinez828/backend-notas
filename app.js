@@ -21,14 +21,79 @@ pool.query('SELECT NOW()')
 ======================== */
 const swaggerUi = require('swagger-ui-express');
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup({
+const swaggerDoc = {
   openapi: "3.0.0",
   info: {
     title: "API Notas",
-    version: "1.0.0"
+    version: "1.0.0",
+    description: "API para estudiantes y notas"
+  },
+  servers: [
+    {
+      url: "https://backend-notas-production.up.railway.app"
+    }
+  ],
+  paths: {
+    "/estudiantes": {
+      get: {
+        summary: "Obtener todos los estudiantes",
+        responses: {
+          200: {
+            description: "Lista de estudiantes"
+          }
+        }
+      }
+    },
+    "/estudiantes/{cedula}": {
+      get: {
+        summary: "Consultar estudiante con notas",
+        parameters: [
+          {
+            name: "cedula",
+            in: "path",
+            required: true,
+            schema: { type: "string" }
+          }
+        ],
+        responses: {
+          200: {
+            description: "Datos del estudiante"
+          }
+        }
+      }
+    },
+    "/notas": {
+      post: {
+        summary: "Registrar notas",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  cedula: { type: "string" },
+                  materia: { type: "string" },
+                  nota1: { type: "number" },
+                  nota2: { type: "number" },
+                  nota3: { type: "number" },
+                  nota4: { type: "number" }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          200: {
+            description: "Notas registradas"
+          }
+        }
+      }
+    }
   }
-}));
+};
 
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDoc));
 /* ========================
    CONSULTAR ESTUDIANTE + NOTAS
 ======================== */
