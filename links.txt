@@ -1,2 +1,11 @@
 https://backend-notas-production.up.railway.app/estudiantes
 https://backend-notas-production.up.railway.app/estudiantes/12345
+https://backend-notas-production.up.railway.app/api-docs/#/Estudiantes/post_estudiantes
+
+
+microservicio 
+
+https://backend-notas-production.up.railway.app
+
+front end
+https://notas-app-git-main-dannamartinez828s-projects.vercel.app/

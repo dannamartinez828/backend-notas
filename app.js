@@ -248,6 +248,10 @@ app.post('/notas', async (req, res) => {
       error: error.message
     });
   }
+  app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(specs);
+});
 });
 
 /* =========================
