@@ -4,14 +4,51 @@ const express = require('express');
 const cors = require('cors');
 const pool = require('./db');
 
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsdoc = require('swagger-jsdoc');
+
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
 /* =========================
+   SWAGGER CONFIG
+========================= */
+const options = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'API Sistema de Notas',
+      version: '1.0.0',
+      description: 'Backend para registrar estudiantes y notas'
+    },
+    servers: [
+      {
+        url: 'https://backend-notas-production.up.railway.app'
+      }
+    ]
+  },
+  apis: ['./app.js']
+};
+
+const swaggerSpec = swaggerJsdoc(options);
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+/* =========================
    INICIO
 ========================= */
+/**
+ * @swagger
+ * /
+ *   get:
+ *     summary: Ruta principal
+ *     tags: [Inicio]
+ *     responses:
+ *       200:
+ *         description: API funcionando
+ */
 app.get('/', (req, res) => {
   res.send("API NOTAS funcionando");
 });
@@ -19,6 +56,16 @@ app.get('/', (req, res) => {
 /* =========================
    VER TODOS ESTUDIANTES
 ========================= */
+/**
+ * @swagger
+ * /estudiantes:
+ *   get:
+ *     summary: Ver todos los estudiantes
+ *     tags: [Estudiantes]
+ *     responses:
+ *       200:
+ *         description: Lista estudiantes
+ */
 app.get('/estudiantes', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM estudiantes');
@@ -31,6 +78,22 @@ app.get('/estudiantes', async (req, res) => {
 /* =========================
    CONSULTAR ESTUDIANTE
 ========================= */
+/**
+ * @swagger
+ * /estudiantes/{cedula}:
+ *   get:
+ *     summary: Consultar estudiante por cédula
+ *     tags: [Estudiantes]
+ *     parameters:
+ *       - in: path
+ *         name: cedula
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Datos estudiante y notas
+ */
 app.get('/estudiantes/:cedula', async (req, res) => {
   try {
     const { cedula } = req.params;
@@ -62,6 +125,31 @@ app.get('/estudiantes/:cedula', async (req, res) => {
 /* =========================
    REGISTRAR ESTUDIANTE
 ========================= */
+/**
+ * @swagger
+ * /estudiantes:
+ *   post:
+ *     summary: Registrar estudiante
+ *     tags: [Estudiantes]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               cedula:
+ *                 type: string
+ *               nombre:
+ *                 type: string
+ *               correo:
+ *                 type: string
+ *               celular:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Estudiante creado
+ */
 app.post('/estudiantes', async (req, res) => {
   try {
     const { cedula, nombre, correo, celular } = req.body;
@@ -84,11 +172,39 @@ app.post('/estudiantes', async (req, res) => {
 /* =========================
    REGISTRAR NOTAS
 ========================= */
+/**
+ * @swagger
+ * /notas:
+ *   post:
+ *     summary: Registrar notas
+ *     tags: [Notas]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               cedula:
+ *                 type: string
+ *               materia:
+ *                 type: string
+ *               nota1:
+ *                 type: number
+ *               nota2:
+ *                 type: number
+ *               nota3:
+ *                 type: number
+ *               nota4:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Notas registradas
+ */
 app.post('/notas', async (req, res) => {
   try {
     const { cedula, materia, nota1, nota2, nota3, nota4 } = req.body;
 
-    // buscar estudiante
     const estudiante = await pool.query(
       'SELECT * FROM estudiantes WHERE cedula=$1',
       [cedula]
@@ -133,6 +249,7 @@ app.post('/notas', async (req, res) => {
     });
   }
 });
+
 /* =========================
    PUERTO
 ========================= */
