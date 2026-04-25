@@ -1,0 +1,4 @@
+mkdir backend-notas
+cd backend-notas
+npm init -y
+npm install express cors pg dotenv swagger-ui-express
