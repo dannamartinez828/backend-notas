@@ -1,102 +1,36 @@
 require('dotenv').config();
-console.log("ENV cargado:", process.env.DATABASE_URL);
+
 const express = require('express');
 const cors = require('cors');
 const pool = require('./db');
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
-/* ========================
-   TEST CONEXIÓN DB
-======================== */
-pool.query('SELECT NOW()')
-  .then(res => console.log("✅ DB conectada:", res.rows))
-  .catch(err => console.error("❌ Error DB:", err));
-  console.log("URL:", process.env.DATABASE_URL);
+/* =========================
+   INICIO
+========================= */
+app.get('/', (req, res) => {
+  res.send("API NOTAS funcionando");
+});
 
-/* ========================
-   SWAGGER
-======================== */
-const swaggerUi = require('swagger-ui-express');
-
-const swaggerDoc = {
-  openapi: "3.0.0",
-  info: {
-    title: "API Notas",
-    version: "1.0.0",
-    description: "API para estudiantes y notas"
-  },
-  servers: [
-    {
-      url: "https://backend-notas-production.up.railway.app"
-    }
-  ],
-  paths: {
-    "/estudiantes": {
-      get: {
-        summary: "Obtener todos los estudiantes",
-        responses: {
-          200: {
-            description: "Lista de estudiantes"
-          }
-        }
-      }
-    },
-    "/estudiantes/{cedula}": {
-      get: {
-        summary: "Consultar estudiante con notas",
-        parameters: [
-          {
-            name: "cedula",
-            in: "path",
-            required: true,
-            schema: { type: "string" }
-          }
-        ],
-        responses: {
-          200: {
-            description: "Datos del estudiante"
-          }
-        }
-      }
-    },
-    "/notas": {
-      post: {
-        summary: "Registrar notas",
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: {
-                type: "object",
-                properties: {
-                  cedula: { type: "string" },
-                  materia: { type: "string" },
-                  nota1: { type: "number" },
-                  nota2: { type: "number" },
-                  nota3: { type: "number" },
-                  nota4: { type: "number" }
-                }
-              }
-            }
-          }
-        },
-        responses: {
-          200: {
-            description: "Notas registradas"
-          }
-        }
-      }
-    }
+/* =========================
+   VER TODOS ESTUDIANTES
+========================= */
+app.get('/estudiantes', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM estudiantes');
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json(error);
   }
-};
+});
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDoc));
-/* ========================
-   CONSULTAR ESTUDIANTE + NOTAS
-======================== */
+/* =========================
+   CONSULTAR ESTUDIANTE
+========================= */
 app.get('/estudiantes/:cedula', async (req, res) => {
   try {
     const { cedula } = req.params;
@@ -107,7 +41,7 @@ app.get('/estudiantes/:cedula', async (req, res) => {
     );
 
     if (estudiante.rows.length === 0) {
-      return res.status(404).json({ message: "No encontrado" });
+      return res.status(404).json({ mensaje: 'No existe' });
     }
 
     const notas = await pool.query(
@@ -120,15 +54,36 @@ app.get('/estudiantes/:cedula', async (req, res) => {
       notas: notas.rows
     });
 
-  } catch (err) {
-    console.error("❌ ERROR GET /estudiantes:", err);
-    res.status(500).json({ error: err.message || err });
+  } catch (error) {
+    res.status(500).json(error);
   }
 });
 
-/* ========================
+/* =========================
+   REGISTRAR ESTUDIANTE
+========================= */
+app.post('/estudiantes', async (req, res) => {
+  try {
+    const { cedula, nombre, correo, celular } = req.body;
+
+    const result = await pool.query(
+      `INSERT INTO estudiantes
+      (cedula,nombre,correo,celular)
+      VALUES($1,$2,$3,$4)
+      RETURNING *`,
+      [cedula, nombre, correo, celular]
+    );
+
+    res.json(result.rows[0]);
+
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
+/* =========================
    REGISTRAR NOTAS
-======================== */
+========================= */
 app.post('/notas', async (req, res) => {
   try {
     const { cedula, materia, nota1, nota2, nota3, nota4 } = req.body;
@@ -139,46 +94,37 @@ app.post('/notas', async (req, res) => {
     );
 
     if (estudiante.rows.length === 0) {
-      return res.status(404).json({ message: "Estudiante no existe" });
+      return res.status(404).json({ mensaje: 'No existe estudiante' });
     }
 
-    const estudiante_id = estudiante.rows[0].id;
+    const id = estudiante.rows[0].id;
 
     const definitiva =
-      (Number(nota1) + Number(nota2) + Number(nota3) + Number(nota4)) / 4;
+      (Number(nota1) +
+        Number(nota2) +
+        Number(nota3) +
+        Number(nota4)) / 4;
 
     const result = await pool.query(
-      `INSERT INTO notas 
-      (estudiante_id, materia, nota1, nota2, nota3, nota4, definitiva)
-      VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [estudiante_id, materia, nota1, nota2, nota3, nota4, definitiva]
+      `INSERT INTO notas
+      (estudiante_id,materia,nota1,nota2,nota3,nota4,definitiva)
+      VALUES($1,$2,$3,$4,$5,$6,$7)
+      RETURNING *`,
+      [id, materia, nota1, nota2, nota3, nota4, definitiva]
     );
 
     res.json(result.rows[0]);
 
-  } catch (err) {
-    console.error("❌ ERROR POST /notas:", err);
-    res.status(500).json({ error: err.message || err });
+  } catch (error) {
+    res.status(500).json(error);
   }
 });
 
-/* ========================
-   EXTRA (VER TODOS)
-======================== */
-app.get('/estudiantes', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM estudiantes');
-    res.json(result.rows);
-  } catch (err) {
-    console.error("❌ ERROR GET /estudiantes:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-/* ========================
-   SERVIDOR
-======================== */
+/* =========================
+   PUERTO
+========================= */
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+  console.log("Servidor corriendo");
 });
