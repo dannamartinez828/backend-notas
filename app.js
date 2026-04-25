@@ -34,7 +34,14 @@ const options = {
 
 const swaggerSpec = swaggerJsdoc(options);
 
+/* Swagger visual */
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+/* Swagger JSON */
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
 
 /* =========================
    INICIO
@@ -131,24 +138,6 @@ app.get('/estudiantes/:cedula', async (req, res) => {
  *   post:
  *     summary: Registrar estudiante
  *     tags: [Estudiantes]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               cedula:
- *                 type: string
- *               nombre:
- *                 type: string
- *               correo:
- *                 type: string
- *               celular:
- *                 type: string
- *     responses:
- *       200:
- *         description: Estudiante creado
  */
 app.post('/estudiantes', async (req, res) => {
   try {
@@ -178,28 +167,6 @@ app.post('/estudiantes', async (req, res) => {
  *   post:
  *     summary: Registrar notas
  *     tags: [Notas]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               cedula:
- *                 type: string
- *               materia:
- *                 type: string
- *               nota1:
- *                 type: number
- *               nota2:
- *                 type: number
- *               nota3:
- *                 type: number
- *               nota4:
- *                 type: number
- *     responses:
- *       200:
- *         description: Notas registradas
  */
 app.post('/notas', async (req, res) => {
   try {
@@ -243,15 +210,10 @@ app.post('/notas', async (req, res) => {
     res.json(result.rows[0]);
 
   } catch (error) {
-    console.log(error);
     res.status(500).json({
       error: error.message
     });
   }
-  app.get('/api-docs.json', (req, res) => {
-  res.setHeader('Content-Type', 'application/json');
-  res.send(specs);
-});
 });
 
 /* =========================
