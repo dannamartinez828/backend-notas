@@ -22,127 +22,13 @@ pool.query('SELECT NOW()')
 ======================== */
 const swaggerUi = require('swagger-ui-express');
 
-const swaggerDoc = {
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup({
   openapi: "3.0.0",
   info: {
     title: "API Notas",
-    version: "1.0.0",
-    description: "API para gestionar estudiantes y notas"
-  },
-  servers: [
-    {
-      url: "https://backend-notas-production.up.railway.app"
-    }
-  ],
-  paths: {
-    "/estudiantes": {
-      get: {
-        summary: "Obtener todos los estudiantes",
-        responses: {
-          200: {
-            description: "Lista de estudiantes"
-          }
-        }
-      },
-      post: {
-        summary: "Crear estudiante",
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: {
-                type: "object",
-                properties: {
-                  cedula: { type: "string" },
-                  nombre: { type: "string" },
-                  correo: { type: "string" },
-                  celular: { type: "string" }
-                }
-              }
-            }
-          }
-        },
-        responses: {
-          200: {
-            description: "Estudiante creado"
-          }
-        }
-      }
-    },
-    "/estudiantes/{cedula}": {
-      get: {
-        summary: "Consultar estudiante con notas",
-        parameters: [
-          {
-            name: "cedula",
-            in: "path",
-            required: true,
-            schema: { type: "string" }
-          }
-        ],
-        responses: {
-          200: {
-            description: "Datos del estudiante"
-          }
-        }
-      }
-    },
-    "/notas": {
-      post: {
-        summary: "Registrar notas",
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: {
-                type: "object",
-                properties: {
-                  cedula: { type: "string" },
-                  materia: { type: "string" },
-                  nota1: { type: "number" },
-                  nota2: { type: "number" },
-                  nota3: { type: "number" },
-                  nota4: { type: "number" }
-                }
-              }
-            }
-          }
-        },
-        responses: {
-          200: {
-            description: "Notas registradas"
-          }
-        }
-      }
-    }
+    version: "1.0.0"
   }
-};
-
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDoc));
-
-/* ========================
-   REGISTRAR ESTUDIANTE
-======================== */
-app.post('/estudiantes', async (req, res) => {
-  try {
-    const { cedula, nombre, correo, celular } = req.body;
-
-    if (!cedula || !nombre) {
-      return res.status(400).json({ error: "Cedula y nombre son obligatorios" });
-    }
-
-    const result = await pool.query(
-      'INSERT INTO estudiantes (cedula, nombre, correo, celular) VALUES ($1,$2,$3,$4) RETURNING *',
-      [cedula, nombre, correo, celular]
-    );
-
-    res.json(result.rows[0]);
-
-  } catch (err) {
-    console.error("❌ ERROR POST /estudiantes:", err);
-    res.status(500).json({ error: err.message || err });
-  }
-});
+}));
 
 /* ========================
    CONSULTAR ESTUDIANTE + NOTAS
