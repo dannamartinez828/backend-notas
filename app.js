@@ -3,7 +3,6 @@ console.log("ENV cargado:", process.env.DATABASE_URL);
 const express = require('express');
 const cors = require('cors');
 const pool = require('./db');
-const swaggerUi = require('swagger-ui-express');
 
 const app = express();
 app.use(cors());
@@ -20,6 +19,7 @@ pool.query('SELECT NOW()')
 /* ========================
    SWAGGER
 ======================== */
+const swaggerUi = require('swagger-ui-express');
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup({
   openapi: "3.0.0",
