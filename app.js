@@ -164,6 +164,23 @@ app.post('/estudiantes', async (req, res) => {
   try {
     const { cedula, nombre, correo, celular } = req.body;
 
+    if (!cedula || !nombre || !correo) {
+      return res.status(400).json({
+        error: "Faltan datos obligatorios"
+      });
+    }
+
+    const existe = await pool.query(
+      'SELECT * FROM estudiantes WHERE cedula=$1',
+      [cedula]
+    );
+
+    if (existe.rows.length > 0) {
+      return res.status(400).json({
+        error: "La cédula ya existe"
+      });
+    }
+
     const result = await pool.query(
       `INSERT INTO estudiantes
       (cedula,nombre,correo,celular)
@@ -175,7 +192,11 @@ app.post('/estudiantes', async (req, res) => {
     res.json(result.rows[0]);
 
   } catch (error) {
-    res.status(500).json(error);
+    console.log(error);
+
+    res.status(500).json({
+      error: error.message
+    });
   }
 });
 
@@ -191,7 +212,20 @@ app.post('/estudiantes', async (req, res) => {
  */
 app.post('/notas', async (req, res) => {
   try {
-    const { cedula, materia, nota1, nota2, nota3, nota4 } = req.body;
+    const {
+      cedula,
+      materia,
+      nota1,
+      nota2,
+      nota3,
+      nota4
+    } = req.body;
+
+    if (!cedula || !materia) {
+      return res.status(400).json({
+        error: "Faltan datos"
+      });
+    }
 
     const estudiante = await pool.query(
       'SELECT * FROM estudiantes WHERE cedula=$1',
@@ -200,17 +234,19 @@ app.post('/notas', async (req, res) => {
 
     if (estudiante.rows.length === 0) {
       return res.status(404).json({
-        mensaje: "Estudiante no existe"
+        error: "Estudiante no existe"
       });
     }
 
     const estudiante_id = estudiante.rows[0].id;
 
     const definitiva =
-      (Number(nota1) +
-       Number(nota2) +
-       Number(nota3) +
-       Number(nota4)) / 4;
+      (
+        Number(nota1) +
+        Number(nota2) +
+        Number(nota3) +
+        Number(nota4)
+      ) / 4;
 
     const result = await pool.query(
       `INSERT INTO notas
@@ -231,6 +267,8 @@ app.post('/notas', async (req, res) => {
     res.json(result.rows[0]);
 
   } catch (error) {
+    console.log(error);
+
     res.status(500).json({
       error: error.message
     });
