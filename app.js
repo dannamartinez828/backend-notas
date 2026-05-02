@@ -272,7 +272,7 @@ app.post('/estudiantes', async (req, res) => {
     );
 
     if (existe.rows.length > 0) {
-      return res.status(400).json({
+      return res.status(409).json({
         error: 'La cédula ya existe'
       });
     }
