@@ -140,18 +140,44 @@ app.get('/', (req, res) => {
  *       200:
  *         description: Lista de estudiantes
  */
-app.get('/estudiantes', async (req, res) => {
+app.post('/estudiantes', async (req, res) => {
   try {
-    const result = await pool.query(
-      'SELECT * FROM estudiantes ORDER BY id ASC'
+    const { cedula, nombre, correo, celular } = req.body;
+
+    if (!cedula || !nombre || !correo) {
+      return res.status(400).json({
+        error: 'FALTAN_DATOS'
+      });
+    }
+
+    const existe = await pool.query(
+      'SELECT * FROM estudiantes WHERE cedula=$1',
+      [cedula]
     );
 
-    res.json(result.rows);
+    // 🔴 DUPLICADO CONTROLADO
+    if (existe.rows.length > 0) {
+      return res.status(409).json({
+        error: 'ESTUDIANTE_EXISTE',
+        message: 'La cédula ya está registrada'
+      });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO estudiantes (cedula, nombre, correo, celular)
+       VALUES ($1,$2,$3,$4)
+       RETURNING *`,
+      [cedula, nombre, correo, celular]
+    );
+
+    res.json(result.rows[0]);
+
   } catch (error) {
     console.log(error);
 
     res.status(500).json({
-      error: error.message
+      error: 'ERROR_SERVER',
+      message: error.message
     });
   }
 });
