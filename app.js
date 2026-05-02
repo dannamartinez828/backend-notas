@@ -9,8 +9,12 @@ const swaggerJsdoc = require('swagger-jsdoc');
 
 const app = express();
 
+/* =========================
+   CONFIG GENERAL
+========================= */
 app.use(cors());
 app.use(express.json());
+app.set('trust proxy', 1);
 
 /* =========================
    SWAGGER CONFIG
@@ -21,12 +25,13 @@ const options = {
     info: {
       title: 'API Sistema de Notas',
       version: '1.0.0',
-      description: 'Microservicios para registrar estudiantes, notas y consultar información académica'
+      description:
+        'Microservicios para registrar estudiantes, registrar notas y consultar información académica'
     },
     servers: [
       {
         url: 'https://backend-notas-production.up.railway.app',
-        description: 'Servidor Railway Producción'
+        description: 'Servidor Producción Railway'
       },
       {
         url: 'http://localhost:3000',
@@ -39,10 +44,22 @@ const options = {
           type: 'object',
           required: ['cedula', 'nombre', 'correo'],
           properties: {
-            cedula: { type: 'string', example: '12345' },
-            nombre: { type: 'string', example: 'Ana Lopez' },
-            correo: { type: 'string', example: 'ana@gmail.com' },
-            celular: { type: 'string', example: '3001234567' }
+            cedula: {
+              type: 'string',
+              example: '123456789'
+            },
+            nombre: {
+              type: 'string',
+              example: 'Ana Lopez'
+            },
+            correo: {
+              type: 'string',
+              example: 'ana@gmail.com'
+            },
+            celular: {
+              type: 'string',
+              example: '3001234567'
+            }
           }
         },
 
@@ -50,12 +67,30 @@ const options = {
           type: 'object',
           required: ['cedula', 'materia'],
           properties: {
-            cedula: { type: 'string', example: '12345' },
-            materia: { type: 'string', example: 'Matematicas' },
-            nota1: { type: 'number', example: 4.5 },
-            nota2: { type: 'number', example: 3.8 },
-            nota3: { type: 'number', example: 4.2 },
-            nota4: { type: 'number', example: 5.0 }
+            cedula: {
+              type: 'string',
+              example: '123456789'
+            },
+            materia: {
+              type: 'string',
+              example: 'Matematicas'
+            },
+            nota1: {
+              type: 'number',
+              example: 4.5
+            },
+            nota2: {
+              type: 'number',
+              example: 3.8
+            },
+            nota3: {
+              type: 'number',
+              example: 4.2
+            },
+            nota4: {
+              type: 'number',
+              example: 5.0
+            }
           }
         }
       }
@@ -63,6 +98,17 @@ const options = {
   },
   apis: ['./app.js']
 };
+
+const swaggerSpec = swaggerJsdoc(options);
+
+/* Swagger Visual */
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+/* Swagger JSON */
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
 
 /* =========================
    INICIO
@@ -75,10 +121,10 @@ const options = {
  *     tags: [Inicio]
  *     responses:
  *       200:
- *         description: API funcionando
+ *         description: API funcionando correctamente
  */
 app.get('/', (req, res) => {
-  res.send("API NOTAS funcionando");
+  res.send('API NOTAS funcionando');
 });
 
 /* =========================
@@ -88,18 +134,25 @@ app.get('/', (req, res) => {
  * @swagger
  * /estudiantes:
  *   get:
- *     summary: Ver todos los estudiantes
+ *     summary: Obtener todos los estudiantes
  *     tags: [Estudiantes]
  *     responses:
  *       200:
- *         description: Lista estudiantes
+ *         description: Lista de estudiantes
  */
 app.get('/estudiantes', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM estudiantes');
+    const result = await pool.query(
+      'SELECT * FROM estudiantes ORDER BY id ASC'
+    );
+
     res.json(result.rows);
   } catch (error) {
-    res.status(500).json(error);
+    console.log(error);
+
+    res.status(500).json({
+      error: error.message
+    });
   }
 });
 
@@ -120,7 +173,9 @@ app.get('/estudiantes', async (req, res) => {
  *           type: string
  *     responses:
  *       200:
- *         description: Datos estudiante y notas
+ *         description: Datos del estudiante con notas
+ *       404:
+ *         description: No encontrado
  */
 app.get('/estudiantes/:cedula', async (req, res) => {
   try {
@@ -132,7 +187,9 @@ app.get('/estudiantes/:cedula', async (req, res) => {
     );
 
     if (estudiante.rows.length === 0) {
-      return res.status(404).json({ mensaje: 'No existe' });
+      return res.status(404).json({
+        mensaje: 'Estudiante no existe'
+      });
     }
 
     const notas = await pool.query(
@@ -146,7 +203,11 @@ app.get('/estudiantes/:cedula', async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json(error);
+    console.log(error);
+
+    res.status(500).json({
+      error: error.message
+    });
   }
 });
 
@@ -159,6 +220,15 @@ app.get('/estudiantes/:cedula', async (req, res) => {
  *   post:
  *     summary: Registrar estudiante
  *     tags: [Estudiantes]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Estudiante'
+ *     responses:
+ *       200:
+ *         description: Estudiante registrado
  */
 app.post('/estudiantes', async (req, res) => {
   try {
@@ -166,7 +236,7 @@ app.post('/estudiantes', async (req, res) => {
 
     if (!cedula || !nombre || !correo) {
       return res.status(400).json({
-        error: "Faltan datos obligatorios"
+        error: 'Faltan datos obligatorios'
       });
     }
 
@@ -177,7 +247,7 @@ app.post('/estudiantes', async (req, res) => {
 
     if (existe.rows.length > 0) {
       return res.status(400).json({
-        error: "La cédula ya existe"
+        error: 'La cédula ya existe'
       });
     }
 
@@ -207,8 +277,17 @@ app.post('/estudiantes', async (req, res) => {
  * @swagger
  * /notas:
  *   post:
- *     summary: Registrar notas
+ *     summary: Registrar notas de estudiante
  *     tags: [Notas]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Nota'
+ *     responses:
+ *       200:
+ *         description: Nota registrada
  */
 app.post('/notas', async (req, res) => {
   try {
@@ -223,7 +302,7 @@ app.post('/notas', async (req, res) => {
 
     if (!cedula || !materia) {
       return res.status(400).json({
-        error: "Faltan datos"
+        error: 'Faltan datos'
       });
     }
 
@@ -234,7 +313,7 @@ app.post('/notas', async (req, res) => {
 
     if (estudiante.rows.length === 0) {
       return res.status(404).json({
-        error: "Estudiante no existe"
+        error: 'Estudiante no existe'
       });
     }
 
@@ -242,10 +321,10 @@ app.post('/notas', async (req, res) => {
 
     const definitiva =
       (
-        Number(nota1) +
-        Number(nota2) +
-        Number(nota3) +
-        Number(nota4)
+        Number(nota1 || 0) +
+        Number(nota2 || 0) +
+        Number(nota3 || 0) +
+        Number(nota4 || 0)
       ) / 4;
 
     const result = await pool.query(
@@ -281,5 +360,5 @@ app.post('/notas', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log("Servidor corriendo");
+  console.log('Servidor corriendo en puerto ' + PORT);
 });
