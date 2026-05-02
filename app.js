@@ -21,27 +21,48 @@ const options = {
     info: {
       title: 'API Sistema de Notas',
       version: '1.0.0',
-      description: 'Backend para registrar estudiantes y notas'
+      description: 'Microservicios para registrar estudiantes, notas y consultar información académica'
     },
     servers: [
       {
-        url: 'https://backend-notas-production.up.railway.app'
+        url: 'https://backend-notas-production.up.railway.app',
+        description: 'Servidor Railway Producción'
+      },
+      {
+        url: 'http://localhost:3000',
+        description: 'Servidor Local'
       }
-    ]
+    ],
+    components: {
+      schemas: {
+        Estudiante: {
+          type: 'object',
+          required: ['cedula', 'nombre', 'correo'],
+          properties: {
+            cedula: { type: 'string', example: '12345' },
+            nombre: { type: 'string', example: 'Ana Lopez' },
+            correo: { type: 'string', example: 'ana@gmail.com' },
+            celular: { type: 'string', example: '3001234567' }
+          }
+        },
+
+        Nota: {
+          type: 'object',
+          required: ['cedula', 'materia'],
+          properties: {
+            cedula: { type: 'string', example: '12345' },
+            materia: { type: 'string', example: 'Matematicas' },
+            nota1: { type: 'number', example: 4.5 },
+            nota2: { type: 'number', example: 3.8 },
+            nota3: { type: 'number', example: 4.2 },
+            nota4: { type: 'number', example: 5.0 }
+          }
+        }
+      }
+    }
   },
   apis: ['./app.js']
 };
-
-const swaggerSpec = swaggerJsdoc(options);
-
-/* Swagger visual */
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
-/* Swagger JSON */
-app.get('/api-docs.json', (req, res) => {
-  res.setHeader('Content-Type', 'application/json');
-  res.send(swaggerSpec);
-});
 
 /* =========================
    INICIO

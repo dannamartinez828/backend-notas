@@ -9,3 +9,9 @@ https://backend-notas-production.up.railway.app
 
 front end
 https://notas-app-git-main-dannamartinez828s-projects.vercel.app/
+
+
+swagger
+
+https://backend-notas-production.up.railway.app/api-docs.json
+https://backend-notas-production.up.railway.app/api-docs/
